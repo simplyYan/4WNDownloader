@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4WNDownloader</title>
+    <title>File Downloader</title>
     <style>
         body {
             margin: 0;
@@ -26,7 +26,7 @@
             font-size: 1.2em;
             color: #03DAC6;
         }
-        .error, .success {
+        .error, .success, .manual-download {
             display: none;
             font-size: 1.1em;
         }
@@ -35,6 +35,10 @@
         }
         .success {
             color: #03DAC6;
+        }
+        .manual-download {
+            color: #BB86FC;
+            margin-top: 20px;
         }
         button {
             margin-top: 20px;
@@ -56,6 +60,9 @@
         <div class="loading">Loading...</div>
         <div class="error"></div>
         <div class="success"></div>
+        <div class="manual-download">
+            If the download didn't start automatically, <button id="manual-download-btn">click here to download</button>.
+        </div>
         <button id="retry" style="display: none;">Try Again</button>
     </div>
     <script>
@@ -68,16 +75,7 @@
             document.getElementById('retry').style.display = type === 'error' ? 'block' : 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const loading = document.querySelector('.loading');
-            loading.style.display = 'block';
-
-            const hash = window.location.hash.substring(1);
-            if (!hash) {
-                showMessage('error', 'Error: No hash found in the URL.');
-                return;
-            }
-
+        async function handleDownload(hash) {
             const filePath = `./files/${hash}`;
             try {
                 const response = await fetch(filePath);
@@ -89,13 +87,35 @@
                     link.download = hash;
                     link.click();
                     URL.revokeObjectURL(url);
+
                     showMessage('success', `File "${hash}" downloaded successfully.`);
+                    
+                    document.querySelector('.manual-download').style.display = 'block';
+                    document.getElementById('manual-download-btn').onclick = () => {
+                        const manualLink = document.createElement('a');
+                        manualLink.href = url;
+                        manualLink.download = hash;
+                        manualLink.click();
+                    };
                 } else {
                     throw new Error('File not found.');
                 }
             } catch (error) {
                 showMessage('error', `Error: ${error.message}`);
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loading = document.querySelector('.loading');
+            loading.style.display = 'block';
+
+            const hash = window.location.hash.substring(1);
+            if (!hash) {
+                showMessage('error', 'Error: No hash found in the URL.');
+                return;
+            }
+
+            handleDownload(hash);
         });
 
         document.getElementById('retry').addEventListener('click', () => {
