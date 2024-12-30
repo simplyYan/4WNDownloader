@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4WNDownloader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+        }
+        .loading {
+            display: none;
+            font-size: 1.2em;
+            color: #03DAC6;
+        }
+        .error, .success {
+            display: none;
+            font-size: 1.1em;
+        }
+        .error {
+            color: #CF6679;
+        }
+        .success {
+            color: #03DAC6;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #03DAC6;
+            border: none;
+            color: #121212;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #028e7d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading">Loading...</div>
+        <div class="error"></div>
+        <div class="success"></div>
+        <button id="retry" style="display: none;">Try Again</button>
+    </div>
+    <script>
+        function showMessage(type, message) {
+            document.querySelector('.loading').style.display = 'none';
+            document.querySelector('.error').style.display = type === 'error' ? 'block' : 'none';
+            document.querySelector('.success').style.display = type === 'success' ? 'block' : 'none';
+            document.querySelector('.error').textContent = type === 'error' ? message : '';
+            document.querySelector('.success').textContent = type === 'success' ? message : '';
+            document.getElementById('retry').style.display = type === 'error' ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loading = document.querySelector('.loading');
+            loading.style.display = 'block';
+
+            const hash = window.location.hash.substring(1);
+            if (!hash) {
+                showMessage('error', 'Error: No hash found in the URL.');
+                return;
+            }
+
+            const filePath = `./files/${hash}`;
+            try {
+                const response = await fetch(filePath);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = hash;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    showMessage('success', `File "${hash}" downloaded successfully.`);
+                } else {
+                    throw new Error('File not found.');
+                }
+            } catch (error) {
+                showMessage('error', `Error: ${error.message}`);
+            }
+        });
+
+        document.getElementById('retry').addEventListener('click', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
